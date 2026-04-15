@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Patient Registration Tracker - Medanta Hospital Lucknow">
+    <meta name="description" content="Credit/Panel Patient Check-List">
     <meta name="author" content="Ankush Jha - Operations Team">
-    <title>Patient Registration Tracker Pro - Medanta Hospital (Cloud)</title>
+    <title>Credit/Panel Patient Check-List</title>
     <style>
         :root {
             --primary-color: #667eea;
@@ -400,11 +400,27 @@
             border-color: var(--primary-color);
         }
 
+        .department-search {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            background: var(--card-bg);
+            color: var(--text-color);
+        }
+
+        .department-search:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
         .department-multiselect {
             border: 2px solid var(--border-color);
             border-radius: 8px;
             padding: 10px;
-            max-height: 200px;
+            max-height: 250px;
             overflow-y: auto;
             background: var(--card-bg);
         }
@@ -483,6 +499,12 @@
         .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .btn-success {
@@ -960,8 +982,8 @@
     <div class="login-container" id="loginScreen">
         <div class="login-box">
             <div class="login-header">
-                <h1>🏥 Patient Registration Tracker Pro</h1>
-                <p>Medanta Super Speciality Hospital, Lucknow</p>
+                <h1>🏥 Credit/Panel Patient Check-List</h1>
+                <p>Hospital Operations Team</p>
             </div>
             
             <div id="userSelectionView">
@@ -997,15 +1019,15 @@
                 </div>
             </div>
 
-            <div class="version-info">v2.1 Cloud | © 2026 Medanta Hospital</div>
+            <div class="version-info">v2.1 Cloud | © 2026</div>
         </div>
     </div>
 
     <div class="app-container" id="appContainer">
         <div class="app-header">
             <div class="app-title">
-                <h1>Patient Registration Tracker Pro</h1>
-                <p>Medanta Super Speciality Hospital - Operations Team</p>
+                <h1>Credit/Panel Patient Check-List</h1>
+                <p>Hospital Operations Team</p>
             </div>
             <div class="user-info">
                 <div class="current-user" id="currentUserDisplay"></div>
@@ -1064,6 +1086,7 @@
                         <select id="cardType" required>
                             <option value="">-- Select Card Type --</option>
                             <option value="CGHS">CGHS</option>
+                            <option value="CGHS Staff">CGHS Staff</option>
                             <option value="ECHS">ECHS</option>
                             <option value="CAPF">CAPF</option>
                             <option value="NER">NER</option>
@@ -1079,7 +1102,8 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Departments (Select Multiple) <span class="required">*</span></label>
+                        <label>Specialities (Select Multiple) <span class="required">*</span></label>
+                        <input type="text" class="department-search" id="departmentSearch" placeholder="🔍 Search speciality...">
                         <div class="department-multiselect" id="departmentMultiselect"></div>
                         <div class="selected-departments" id="selectedDepartments"></div>
                     </div>
@@ -1092,7 +1116,7 @@
                         </select>
                     </div>
 
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
                         <span id="submitBtnText">➕ Add Patient</span>
                     </button>
                 </form>
@@ -1126,6 +1150,7 @@
                     <select class="filter-select" id="filterCardType" onchange="filterTable()">
                         <option value="">All Card Types</option>
                         <option value="CGHS">CGHS</option>
+                        <option value="CGHS Staff">CGHS Staff</option>
                         <option value="ECHS">ECHS</option>
                         <option value="CAPF">CAPF</option>
                         <option value="NER">NER</option>
@@ -1148,7 +1173,7 @@
                             <th>UHID</th>
                             <th>Card Type</th>
                             <th>Reg. No.</th>
-                            <th>Departments</th>
+                            <th>Specialities</th>
                             <th>Status</th>
                             <th>Added By</th>
                             <th>Actions</th>
@@ -1234,22 +1259,89 @@
   projectId: "studio-169889565-4474c",
   storageBucket: "studio-169889565-4474c.firebasestorage.app",
   messagingSenderId: "460326415493",
-  appId: "1:460326415493:web:bd9a4ae43961d8c8794dec"
-
+  appId: "1:460326415493:web:bd9a4ae43961d8c8794dec",
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const patientsRef = collection(db, "patients");
-        const userPinsRef = collection(db, "userPins");
 
         const DEPARTMENTS = [
-            'Investigation', 'Cardiology', 'Neurology', 'Neurosurgery', 'Nephrology', 'Urology',
-            'Orthopedics', 'Oncology', 'Gastroenterology', 'Pulmonology', 'ENT', 'Ophthalmology',
-            'Dermatology', 'Endocrinology', 'Rheumatology', 'Hematology', 'Psychiatry',
-            'General Medicine', 'General Surgery', 'Pediatrics', 'Gynecology', 'Obstetrics',
-            'Anesthesiology', 'Radiology', 'Pathology', 'Emergency Medicine', 'Critical Care',
-            'Plastic Surgery', 'Vascular Surgery'
+            'Investigation upto 3000/-',
+            'Investigation as per referral',
+            'Cardiology',
+            'Cardiovascular Surgery',
+            'Neurology',
+            'Neurosurgery',
+            'Nephrology',
+            'Urology',
+            'Orthopedics',
+            'Oncology',
+            'Medical Oncology',
+            'Surgical Oncology',
+            'Radiation Oncology',
+            'Gastroenterology',
+            'Gastrointestinal Surgery',
+            'Pulmonology',
+            'Thoracic Surgery',
+            'ENT (Otolaryngology)',
+            'Ophthalmology',
+            'Dermatology',
+            'Endocrinology',
+            'Rheumatology',
+            'Hematology',
+            'Psychiatry',
+            'Psychology',
+            'General Medicine',
+            'General Surgery',
+            'Pediatrics',
+            'Neonatology',
+            'Pediatric Surgery',
+            'Gynecology',
+            'Obstetrics',
+            'Maternal Fetal Medicine',
+            'Anesthesiology',
+            'Pain Medicine',
+            'Radiology',
+            'Interventional Radiology',
+            'Nuclear Medicine',
+            'Pathology',
+            'Microbiology',
+            'Biochemistry',
+            'Emergency Medicine',
+            'Critical Care',
+            'Intensive Care',
+            'Trauma Surgery',
+            'Plastic Surgery',
+            'Cosmetic Surgery',
+            'Vascular Surgery',
+            'Bariatric Surgery',
+            'Dentistry',
+            'Oral & Maxillofacial Surgery',
+            'Orthodontics',
+            'Periodontology',
+            'Physiotherapy',
+            'Rehabilitation Medicine',
+            'Occupational Therapy',
+            'Speech Therapy',
+            'Nutrition & Dietetics',
+            'Sports Medicine',
+            'Geriatric Medicine',
+            'Palliative Care',
+            'Infectious Diseases',
+            'Immunology',
+            'Allergy',
+            'Sleep Medicine',
+            'Hepatology',
+            'Pediatric Cardiology',
+            'Pediatric Neurology',
+            'Pediatric Orthopedics',
+            'Pediatric Oncology',
+            'Pediatric Gastroenterology',
+            'Pediatric Endocrinology',
+            'Pediatric Nephrology',
+            'Pediatric Pulmonology',
+            'Pediatric Hematology'
         ];
 
         const DEFAULT_USERS = [
@@ -1270,6 +1362,7 @@
         let selectedUserForLogin = null;
         let currentPin = '';
         let selectedDepartments = [];
+        let allDepartments = [...DEPARTMENTS];
 
         window.toggleTheme = function() {
             const currentTheme = document.documentElement.getAttribute('data-theme');
@@ -1296,14 +1389,29 @@
         }
 
         function initializeDepartmentSelector() {
+            renderDepartments(allDepartments);
+            
+            const searchInput = document.getElementById('departmentSearch');
+            searchInput.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const filtered = allDepartments.filter(dept => 
+                    dept.toLowerCase().includes(searchTerm)
+                );
+                renderDepartments(filtered);
+            });
+        }
+
+        function renderDepartments(depts) {
             const container = document.getElementById('departmentMultiselect');
             container.innerHTML = '';
-            DEPARTMENTS.forEach(dept => {
+            
+            depts.forEach(dept => {
                 const option = document.createElement('div');
                 option.className = 'department-option';
+                const isChecked = selectedDepartments.includes(dept) ? 'checked' : '';
                 option.innerHTML = `
-                    <input type="checkbox" id="dept-${dept}" value="${dept}" onchange="window.updateSelectedDepartments()">
-                    <label for="dept-${dept}">${dept}</label>
+                    <input type="checkbox" id="dept-${dept.replace(/[^a-zA-Z0-9]/g, '_')}" value="${dept}" ${isChecked} onchange="window.updateSelectedDepartments()">
+                    <label for="dept-${dept.replace(/[^a-zA-Z0-9]/g, '_')}">${dept}</label>
                 `;
                 container.appendChild(option);
             });
@@ -1313,6 +1421,7 @@
             selectedDepartments = [];
             const checkboxes = document.querySelectorAll('#departmentMultiselect input[type="checkbox"]:checked');
             checkboxes.forEach(cb => selectedDepartments.push(cb.value));
+            
             const tagsContainer = document.getElementById('selectedDepartments');
             tagsContainer.innerHTML = '';
             selectedDepartments.forEach(dept => {
@@ -1324,7 +1433,7 @@
         };
 
         window.removeDepartment = function(dept) {
-            const checkbox = document.getElementById(`dept-${dept}`);
+            const checkbox = document.getElementById(`dept-${dept.replace(/[^a-zA-Z0-9]/g, '_')}`);
             if (checkbox) {
                 checkbox.checked = false;
                 window.updateSelectedDepartments();
@@ -1421,6 +1530,8 @@
                 setDefaultDate();
                 document.querySelectorAll('#departmentMultiselect input[type="checkbox"]').forEach(cb => cb.checked = false);
                 window.updateSelectedDepartments();
+                document.getElementById('departmentSearch').value = '';
+                renderDepartments(allDepartments);
                 currentPin = '';
                 selectedUserForLogin = null;
                 updatePinDisplay();
@@ -1453,9 +1564,12 @@
                 return;
             }
             if (selectedDepartments.length === 0) {
-                showError('Please select at least one department!');
+                showError('Please select at least one speciality!');
                 return;
             }
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
 
             const patientData = {
                 date: document.getElementById('patientDate').value,
@@ -1472,11 +1586,13 @@
 
             if (!patientData.patientName || !patientData.uhid || !patientData.cardType || !patientData.registrationNo) {
                 showError();
+                submitBtn.disabled = false;
                 return;
             }
 
             try {
                 showSyncIndicator('💾 Saving...', 'syncing');
+                
                 if (editingPatientId) {
                     await updateDoc(doc(db, "patients", editingPatientId), patientData);
                     editingPatientId = null;
@@ -1484,6 +1600,7 @@
                 } else {
                     await addDoc(patientsRef, patientData);
                 }
+                
                 showSuccess();
                 showSyncIndicator('✅ Saved', 'success');
                 document.getElementById('patientForm').reset();
@@ -1491,10 +1608,14 @@
                 selectedDepartments = [];
                 document.querySelectorAll('#departmentMultiselect input[type="checkbox"]').forEach(cb => cb.checked = false);
                 window.updateSelectedDepartments();
+                document.getElementById('departmentSearch').value = '';
+                renderDepartments(allDepartments);
             } catch (error) {
                 console.error("Error:", error);
-                showError('Failed to save patient!');
+                showError('Failed to save patient: ' + error.message);
                 showSyncIndicator('❌ Error', 'error');
+            } finally {
+                submitBtn.disabled = false;
             }
         }
 
@@ -1546,7 +1667,7 @@
             displayPatients.forEach(patient => {
                 const row = document.createElement('tr');
                 const statusClass = patient.status === 'Registered' ? 'status-registered' : 'status-pending';
-                const cardClass = `card-${patient.cardType.toLowerCase()}`;
+                const cardClass = `card-${patient.cardType.toLowerCase().replace(/\s+/g, '')}`;
                 const departmentsDisplay = Array.isArray(patient.departments) ? patient.departments.join(' + ') : (patient.department || 'N/A');
 
                 row.innerHTML = `
@@ -1611,6 +1732,8 @@
                 document.getElementById('registrationNo').value = patient.registrationNo;
                 document.getElementById('status').value = patient.status;
                 selectedDepartments = Array.isArray(patient.departments) ? [...patient.departments] : (patient.department ? [patient.department] : []);
+                document.getElementById('departmentSearch').value = '';
+                renderDepartments(allDepartments);
                 document.querySelectorAll('#departmentMultiselect input[type="checkbox"]').forEach(cb => {
                     cb.checked = selectedDepartments.includes(cb.value);
                 });
@@ -1712,7 +1835,7 @@
                 alert('No data to export!');
                 return;
             }
-            let csv = 'Date,Patient Name,UHID,Card Type,Registration No,Departments,Status,Added By\n';
+            let csv = 'Date,Patient Name,UHID,Card Type,Registration No,Specialities,Status,Added By\n';
             patients.forEach(patient => {
                 const depts = Array.isArray(patient.departments) ? patient.departments.join(' + ') : (patient.department || 'N/A');
                 csv += `${patient.date},"${patient.patientName}",${patient.uhid},${patient.cardType},${patient.registrationNo},"${depts}",${patient.status},"${patient.addedBy}"\n`;
@@ -1721,7 +1844,7 @@
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `medanta-patient-registrations-${new Date().toISOString().split('T')[0]}.csv`;
+            a.download = `patient-checklist-${new Date().toISOString().split('T')[0]}.csv`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -1832,7 +1955,7 @@
                     </div>
                 </div>
                 <div class="report-section">
-                    <h3>🏥 Departments (Today)</h3>
+                    <h3>🏥 Specialities (Today)</h3>
                     <div class="report-grid">
                         ${Object.entries(departments).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([dept, count]) => `
                             <div class="report-item">
@@ -1903,8 +2026,7 @@
             const depts = Array.isArray(patient.departments) ? patient.departments.join(' + ') : (patient.department || 'N/A');
             const billHTML = `
                 <div style="text-align: center; margin-bottom: 30px;">
-                    <h1 style="color: #1e3c72;">MEDANTA SUPER SPECIALITY HOSPITAL</h1>
-                    <p>Lucknow, Uttar Pradesh</p>
+                    <h1 style="color: #1e3c72;">CREDIT/PANEL PATIENT CHECK-LIST</h1>
                     <h2 style="margin-top: 20px;">PATIENT REGISTRATION RECEIPT</h2>
                 </div>
                 <div style="border: 2px solid #333; padding: 20px; margin-bottom: 20px;">
@@ -1930,7 +2052,7 @@
                             <td style="padding: 10px; border-bottom: 1px solid #ddd;">${patient.registrationNo}</td>
                         </tr>
                         <tr>
-                            <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>Departments:</strong></td>
+                            <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>Specialities:</strong></td>
                             <td style="padding: 10px; border-bottom: 1px solid #ddd;">${depts}</td>
                         </tr>
                         <tr>
@@ -1945,7 +2067,7 @@
                 </div>
                 <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #333;">
                     <p><strong>Generated on:</strong> ${new Date().toLocaleString('en-IN')}</p>
-                    <p style="margin-top: 20px; color: #666;">Thank you for choosing Medanta Hospital!</p>
+                    <p style="margin-top: 20px; font-size: 18px; font-weight: bold;">Thank You !!</p>
                 </div>
             `;
             document.getElementById('printPreview').innerHTML = billHTML;
@@ -1966,7 +2088,7 @@
             const registered = todayPatients.filter(p => p.status === 'Registered').length;
             const pending = todayPatients.filter(p => p.status === 'Pending').length;
 
-            const message = `🏥 *MEDANTA HOSPITAL*
+            const message = `🏥 *CREDIT/PANEL PATIENT CHECK-LIST*
 *PATIENT REGISTRATION UPDATE*
 
 📅 *Date:* ${formatDate(today)}
@@ -1978,8 +2100,7 @@
 
 👤 *Updated by:* ${currentUser.name}
 
-_Patient Tracker Pro v2.1 Cloud_
-_Medanta Super Speciality Hospital, Lucknow_`;
+_Patient Check-List v2.1 Cloud_`;
 
             window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
         };
