@@ -1299,7 +1299,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, setDoc, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyC-of1LA-vEwH7R8eTog9YgC-Um2z_J7BQ",
@@ -1422,6 +1422,15 @@
         let currentPin = '';
         let selectedDepartments = [];
         let allDepartments = [...DEPARTMENTS];
+        let currentSnapshotUnsubscribe = null;
+
+        function getLocalDateString() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
 
         window.toggleTheme = function() {
             const currentTheme = document.documentElement.getAttribute('data-theme');
@@ -1500,6 +1509,7 @@
         };
 
         function loadUserPINs() {
+            // Initial load from localStorage as fallback
             const saved = localStorage.getItem('userPINs');
             if (saved) {
                 USERS = JSON.parse(saved);
@@ -1511,15 +1521,22 @@
                         USERS.push(defUser);
                     }
                 });
-                saveUserPINs();
             } else {
                 USERS = JSON.parse(JSON.stringify(DEFAULT_USERS));
-                saveUserPINs();
             }
         }
 
-        function saveUserPINs() {
+        async function saveUserPINs() {
             localStorage.setItem('userPINs', JSON.stringify(USERS));
+            try {
+                const firestorePins = {};
+                USERS.forEach(u => {
+                    firestorePins[u.id] = { pin: u.pin };
+                });
+                await setDoc(doc(db, "settings", "userPINs"), firestorePins, { merge: true });
+            } catch (error) {
+                console.error("Error syncing PINs to Firestore:", error);
+            }
         }
 
         function loadUsers() {
@@ -1616,7 +1633,7 @@
         };
 
         function setDefaultDate() {
-            document.getElementById('patientDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('patientDate').value = getLocalDateString();
         }
 
         function populateUserFilter() {
@@ -1709,7 +1726,7 @@
             const total = patients.length;
             const registered = patients.filter(p => p.status === 'Registered').length;
             const pending = patients.filter(p => p.status === 'Pending').length;
-            const today = new Date().toISOString().split('T')[0];
+            const today = getLocalDateString();
             const todayCount = patients.filter(p => p.date === today).length;
             const myRegistrations = patients.filter(p => p.addedById === currentUser.id).length;
 
@@ -1872,10 +1889,14 @@
             renderTable(filtered);
         };
 
+        window.reloadPatientsByDate = function() {
+            loadPatientsData();
+        };
+
         window.clearDateFilter = function() {
             document.getElementById('filterDateFrom').value = '';
             document.getElementById('filterDateTo').value = '';
-            window.filterTable();
+            window.reloadPatientsByDate();
         };
 
         window.showMyRegistrations = function() {
@@ -1916,7 +1937,8 @@
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `patient-checklist-${new Date().toISOString().split('T')[0]}.csv`;
+            const today = getLocalDateString();
+            a.download = `patient-checklist-${today}.csv`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -1979,7 +2001,7 @@
         };
 
         window.openDailyReport = function() {
-            const today = new Date().toISOString().split('T')[0];
+            const today = getLocalDateString();
             const todayPatients = patients.filter(p => p.date === today);
             const registered = todayPatients.filter(p => p.status === 'Registered').length;
             const pending = todayPatients.filter(p => p.status === 'Pending').length;
@@ -2056,7 +2078,7 @@
                 const userPatients = patients.filter(p => p.addedBy === user.name);
                 const registered = userPatients.filter(p => p.status === 'Registered').length;
                 const pending = userPatients.filter(p => p.status === 'Pending').length;
-                const today = new Date().toISOString().split('T')[0];
+                const today = getLocalDateString();
                 const todayCount = userPatients.filter(p => p.date === today).length;
 
                 performanceHTML += `
@@ -2155,7 +2177,7 @@
         };
 
         window.sendWhatsAppUpdate = function() {
-            const today = new Date().toISOString().split('T')[0];
+            const today = getLocalDateString();
             const todayPatients = patients.filter(p => p.date === today);
             const registered = todayPatients.filter(p => p.status === 'Registered').length;
             const pending = todayPatients.filter(p => p.status === 'Pending').length;
@@ -2177,37 +2199,85 @@ _Patient Check-List v2.1 Cloud_`;
             window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
         };
 
+        function loadPatientsData() {
+            if (currentSnapshotUnsubscribe) {
+                currentSnapshotUnsubscribe();
+            }
+
+            const dateFrom = document.getElementById('filterDateFrom').value;
+            const dateTo = document.getElementById('filterDateTo').value;
+
+            let q;
+            if (dateFrom && dateTo) {
+                q = query(patientsRef, where("date", ">=", dateFrom), where("date", "<=", dateTo));
+            } else if (dateFrom) {
+                q = query(patientsRef, where("date", ">=", dateFrom));
+            } else if (dateTo) {
+                q = query(patientsRef, where("date", "<=", dateTo));
+            } else {
+                q = query(patientsRef); // Fetches all if filters cleared
+            }
+
+            showSyncIndicator('🔄 Syncing...', 'syncing');
+            
+            currentSnapshotUnsubscribe = onSnapshot(q, (snapshot) => {
+                const newPatients = [];
+                snapshot.forEach((doc) => {
+                    newPatients.push({ docId: doc.id, ...doc.data() });
+                });
+                
+                // Sort by timestamp desc locally to avoid requiring Firestore composite indexes
+                newPatients.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                patients = newPatients;
+
+                showSyncIndicator('✅ Synced', 'success');
+                updateStats();
+                window.filterTable();
+            });
+        }
+
         function init() {
+            loadTheme();
             loadUserPINs();
             loadUsers();
             setDefaultDate();
-            loadTheme();
             initializeDepartmentSelector();
             populateUserFilter();
 
-            const today = new Date().toISOString().split('T')[0];
+            const today = getLocalDateString();
             document.getElementById('filterDateFrom').value = today;
             document.getElementById('filterDateTo').value = today;
 
+            // Date filters should trigger a Firestore requery to fetch the new range
+            document.getElementById('filterDateFrom').addEventListener('change', window.reloadPatientsByDate);
+            document.getElementById('filterDateTo').addEventListener('change', window.reloadPatientsByDate);
+
+            // Sync PINs from Firestore
+            onSnapshot(doc(db, "settings", "userPINs"), (docSnap) => {
+                if (docSnap.exists()) {
+                    const firestorePins = docSnap.data();
+                    let updated = false;
+                    USERS.forEach(u => {
+                        if (firestorePins[u.id] && firestorePins[u.id].pin && u.pin !== firestorePins[u.id].pin) {
+                            u.pin = firestorePins[u.id].pin;
+                            updated = true;
+                        }
+                    });
+                    if (updated) {
+                        localStorage.setItem('userPINs', JSON.stringify(USERS));
+                        if (currentUser) {
+                            const updatedUser = USERS.find(u => u.id === currentUser.id);
+                            if (updatedUser) currentUser = updatedUser;
+                        }
+                    }
+                }
+            });
+
+            // Initial load of data for today
+            loadPatientsData();
+
             document.getElementById('patientForm').addEventListener('submit', handleSubmit);
             document.getElementById('searchInput').addEventListener('input', window.filterTable);
-            document.getElementById('filterDateFrom').addEventListener('change', window.filterTable);
-            document.getElementById('filterDateTo').addEventListener('change', window.filterTable);
-
-            const q = query(patientsRef, orderBy("timestamp", "desc"));
-            onSnapshot(q, (snapshot) => {
-                showSyncIndicator('🔄 Syncing...', 'syncing');
-                patients = [];
-                snapshot.forEach(docSnap => {
-                    patients.push({ ...docSnap.data(), docId: docSnap.id });
-                });
-                window.filterTable();
-                updateStats();
-                showSyncIndicator('✅ Synced', 'success');
-            }, (error) => {
-                console.error("Realtime error:", error);
-                showSyncIndicator('❌ Sync Error', 'error');
-            });
 
             const savedUserId = localStorage.getItem('currentUserId');
             if (savedUserId) {
@@ -2217,7 +2287,7 @@ _Patient Check-List v2.1 Cloud_`;
             }
         }
 
-        init();
+        window.onload = init;
     </script>
 </body>
 </html>
