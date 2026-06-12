@@ -657,6 +657,15 @@
         .card-nr { background: #e2e3e5; color: #383d41; }
         .card-ncr { background: #d6d8db; color: #1b1e21; }
         .card-mcf { background: #cfe2ff; color: #084298; }
+        .card-rdso { background: #e2d9f3; color: #4a2a73; }
+        .card-halkorwa { background: #d1f2eb; color: #0b5345; }
+        .card-hallucknow { background: #d1f2eb; color: #0b5345; }
+        .card-halkanpur { background: #d1f2eb; color: #0b5345; }
+        .card-csir { background: #fcf3cf; color: #7d6608; }
+        .card-ntpc { background: #fadbd8; color: #78281f; }
+        .card-nmdc { background: #d6eaf8; color: #154360; }
+        .card-aai { background: #d4e6f1; color: #1b4f72; }
+        .card-coalindia { background: #f5cba7; color: #784212; }
 
         .action-buttons {
             display: flex;
@@ -877,17 +886,38 @@
         }
 
         @media print {
-            body * {
-                visibility: hidden;
+            @page { size: auto; margin: 0; }
+            .theme-toggle,
+            .sync-indicator,
+            .login-container,
+            .app-container,
+            .modal {
+                display: none !important;
             }
-            .print-preview, .print-preview * {
-                visibility: visible;
+            .modal.active {
+                display: block !important;
+                position: static !important;
+                background: white !important;
+                padding: 0 !important;
+            }
+            .modal.active .modal-content {
+                box-shadow: none !important;
+                padding: 20px !important;
+                margin: 0 !important;
+                max-width: 100% !important;
+                background: white !important;
+                max-height: none !important;
+                overflow: visible !important;
+            }
+            .modal-header button, 
+            .modal-content > button {
+                display: none !important;
             }
             .print-preview {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
+                position: static !important;
+                padding: 0 !important;
+                width: 100% !important;
+                height: auto !important;
             }
         }
 
@@ -1077,8 +1107,8 @@
                     </div>
 
                     <div class="form-group">
-                        <label>UHID <span class="required">*</span></label>
-                        <input type="text" id="patientUHID" placeholder="e.g., MED123456" required>
+                        <label>UHID</label>
+                        <input type="text" id="patientUHID" placeholder="e.g., MED123456">
                     </div>
 
                     <div class="form-group">
@@ -1093,6 +1123,15 @@
                             <option value="NR">NR</option>
                             <option value="NCR">NCR</option>
                             <option value="MCF">MCF</option>
+                            <option value="RDSO">RDSO</option>
+                            <option value="HAL Korwa">HAL Korwa</option>
+                            <option value="HAL Lucknow">HAL Lucknow</option>
+                            <option value="HAL Kanpur">HAL Kanpur</option>
+                            <option value="CSIR">CSIR</option>
+                            <option value="NTPC">NTPC</option>
+                            <option value="NMDC">NMDC</option>
+                            <option value="AAI">AAI</option>
+                            <option value="Coal India">Coal India</option>
                         </select>
                     </div>
 
@@ -1157,6 +1196,15 @@
                         <option value="NR">NR</option>
                         <option value="NCR">NCR</option>
                         <option value="MCF">MCF</option>
+                        <option value="RDSO">RDSO</option>
+                        <option value="HAL Korwa">HAL Korwa</option>
+                        <option value="HAL Lucknow">HAL Lucknow</option>
+                        <option value="HAL Kanpur">HAL Kanpur</option>
+                        <option value="CSIR">CSIR</option>
+                        <option value="NTPC">NTPC</option>
+                        <option value="NMDC">NMDC</option>
+                        <option value="AAI">AAI</option>
+                        <option value="Coal India">Coal India</option>
                     </select>
                     <select class="filter-select" id="filterUser" onchange="filterTable()">
                         <option value="">All Users</option>
@@ -1267,6 +1315,16 @@
         const patientsRef = collection(db, "patients");
 
         const DEPARTMENTS = [
+            'As per Prescription',
+            'Dialysis procedure',
+            'Chemotherapy',
+            'Immunotherapy',
+            'Chemotherapy + Immunotherapy',
+            'Daycare Medical Management',
+            'Daycare Gastro Procedure',
+            'Daycare Pulmonary Procedure',
+            'Radiotherapy Procedure',
+            'Daycare Blood Transfusion',
             'Investigation upto 3000/-',
             'Investigation as per referral',
             'Cardiology',
@@ -1345,14 +1403,15 @@
         ];
 
         const DEFAULT_USERS = [
-            { id: 1, name: 'Ankush Jha', pin: '1234' },
+            { id: 1, name: 'Ankush Jha', pin: '1234', isAdmin: true },
             { id: 2, name: 'Nilesh Gupta', pin: '2345' },
             { id: 3, name: 'Sachin Kumar', pin: '3456' },
             { id: 4, name: 'Pawan Sharma', pin: '4567' },
             { id: 5, name: 'Abhishek Soni', pin: '5678' },
             { id: 6, name: 'Nisha', pin: '6789' },
             { id: 7, name: 'Komal Vishwakarma', pin: '7890' },
-            { id: 8, name: 'Sumit Kumar', pin: '8901' }
+            { id: 8, name: 'Sumit Kumar', pin: '8901' },
+            { id: 9, name: 'Satyam Patel', pin: '1234', isAdmin: true }
         ];
 
         let USERS = [];
@@ -1442,8 +1501,21 @@
 
         function loadUserPINs() {
             const saved = localStorage.getItem('userPINs');
-            USERS = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_USERS));
-            if (!saved) localStorage.setItem('userPINs', JSON.stringify(USERS));
+            if (saved) {
+                USERS = JSON.parse(saved);
+                DEFAULT_USERS.forEach(defUser => {
+                    const existingUser = USERS.find(u => u.id === defUser.id || u.name === defUser.name);
+                    if (existingUser) {
+                        existingUser.isAdmin = defUser.isAdmin || false;
+                    } else {
+                        USERS.push(defUser);
+                    }
+                });
+                saveUserPINs();
+            } else {
+                USERS = JSON.parse(JSON.stringify(DEFAULT_USERS));
+                saveUserPINs();
+            }
         }
 
         function saveUserPINs() {
@@ -1584,7 +1656,7 @@
                 timestamp: new Date().toISOString()
             };
 
-            if (!patientData.patientName || !patientData.uhid || !patientData.cardType || !patientData.registrationNo) {
+            if (!patientData.patientName || !patientData.cardType || !patientData.registrationNo) {
                 showError();
                 submitBtn.disabled = false;
                 return;
@@ -1681,7 +1753,7 @@
                     <td><strong>${patient.addedBy}</strong></td>
                     <td>
                         <div class="action-buttons">
-                            ${patient.addedById === currentUser.id ? `
+                            ${(patient.addedById === currentUser.id || currentUser.isAdmin) ? `
                                 <button class="btn-small btn-toggle" onclick="window.toggleStatus('${patient.docId}')" title="Toggle Status">
                                     ${patient.status === 'Pending' ? '✓' : '⏰'}
                                 </button>
@@ -1706,7 +1778,7 @@
 
         window.toggleStatus = async function(docId) {
             const patient = patients.find(p => p.docId === docId);
-            if (patient && patient.addedById === currentUser.id) {
+            if (patient && (patient.addedById === currentUser.id || currentUser.isAdmin)) {
                 try {
                     showSyncIndicator('🔄 Updating...', 'syncing');
                     await updateDoc(doc(db, "patients", docId), {
@@ -1723,7 +1795,7 @@
 
         window.editPatient = function(docId) {
             const patient = patients.find(p => p.docId === docId);
-            if (patient && patient.addedById === currentUser.id) {
+            if (patient && (patient.addedById === currentUser.id || currentUser.isAdmin)) {
                 editingPatientId = docId;
                 document.getElementById('patientDate').value = patient.date;
                 document.getElementById('patientName').value = patient.patientName;
@@ -1745,7 +1817,7 @@
 
         window.deletePatient = async function(docId) {
             const patient = patients.find(p => p.docId === docId);
-            if (patient && patient.addedById === currentUser.id) {
+            if (patient && (patient.addedById === currentUser.id || currentUser.isAdmin)) {
                 if (confirm(`Are you sure you want to delete ${patient.patientName}?`)) {
                     try {
                         showSyncIndicator('🗑️ Deleting...', 'syncing');
@@ -2113,6 +2185,10 @@ _Patient Check-List v2.1 Cloud_`;
             initializeDepartmentSelector();
             populateUserFilter();
 
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('filterDateFrom').value = today;
+            document.getElementById('filterDateTo').value = today;
+
             document.getElementById('patientForm').addEventListener('submit', handleSubmit);
             document.getElementById('searchInput').addEventListener('input', window.filterTable);
             document.getElementById('filterDateFrom').addEventListener('change', window.filterTable);
@@ -2125,7 +2201,7 @@ _Patient Check-List v2.1 Cloud_`;
                 snapshot.forEach(docSnap => {
                     patients.push({ ...docSnap.data(), docId: docSnap.id });
                 });
-                renderTable();
+                window.filterTable();
                 updateStats();
                 showSyncIndicator('✅ Synced', 'success');
             }, (error) => {
