@@ -1141,6 +1141,11 @@
                     </div>
 
                     <div class="form-group">
+                        <label>Remarks / Instructions (Optional)</label>
+                        <input type="text" id="patientRemarks" placeholder="Enter remarks if any">
+                    </div>
+
+                    <div class="form-group">
                         <label>Specialities (Select Multiple) <span class="required">*</span></label>
                         <input type="text" class="department-search" id="departmentSearch" placeholder="🔍 Search speciality...">
                         <div class="department-multiselect" id="departmentMultiselect"></div>
@@ -1243,6 +1248,16 @@
             <div class="modal-header">
                 <h2>⚙️ Settings</h2>
                 <button class="modal-close" onclick="closeSettings()">✕</button>
+            </div>
+            <div class="report-section">
+                <h3>🖼️ Profile Picture</h3>
+                <div class="form-group" style="text-align: center;">
+                    <img id="profilePicPreview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ccc'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E" alt="Profile" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; border: 2px solid var(--primary-color); display: inline-block;">
+                    <br>
+                    <input type="file" id="profilePicInput" accept="image/*" style="display: none;" onchange="window.handleProfilePicUpload(event)">
+                    <button class="btn btn-secondary" onclick="document.getElementById('profilePicInput').click()">📷 Upload Photo</button>
+                    <p style="color: green; display: none; margin-top: 10px;" id="picSuccessMessage">✅ Profile picture updated!</p>
+                </div>
             </div>
             <div class="report-section">
                 <h3>🔐 Change Your PIN</h3>
@@ -1478,17 +1493,26 @@
                 option.className = 'department-option';
                 const isChecked = selectedDepartments.includes(dept) ? 'checked' : '';
                 option.innerHTML = `
-                    <input type="checkbox" id="dept-${dept.replace(/[^a-zA-Z0-9]/g, '_')}" value="${dept}" ${isChecked} onchange="window.updateSelectedDepartments()">
+                    <input type="checkbox" id="dept-${dept.replace(/[^a-zA-Z0-9]/g, '_')}" value="${dept}" ${isChecked} onchange="window.updateSelectedDepartments(this.value, this.checked)">
                     <label for="dept-${dept.replace(/[^a-zA-Z0-9]/g, '_')}">${dept}</label>
                 `;
                 container.appendChild(option);
             });
         }
 
-        window.updateSelectedDepartments = function() {
-            selectedDepartments = [];
-            const checkboxes = document.querySelectorAll('#departmentMultiselect input[type="checkbox"]:checked');
-            checkboxes.forEach(cb => selectedDepartments.push(cb.value));
+        window.updateSelectedDepartments = function(deptValue, isChecked) {
+            if (deptValue !== undefined) {
+                if (isChecked && !selectedDepartments.includes(deptValue)) {
+                    selectedDepartments.push(deptValue);
+                } else if (!isChecked) {
+                    selectedDepartments = selectedDepartments.filter(d => d !== deptValue);
+                }
+            } else {
+                // Fallback
+                selectedDepartments = [];
+                const checkboxes = document.querySelectorAll('#departmentMultiselect input[type="checkbox"]:checked');
+                checkboxes.forEach(cb => selectedDepartments.push(cb.value));
+            }
             
             const tagsContainer = document.getElementById('selectedDepartments');
             tagsContainer.innerHTML = '';
@@ -1501,11 +1525,10 @@
         };
 
         window.removeDepartment = function(dept) {
+            selectedDepartments = selectedDepartments.filter(d => d !== dept);
             const checkbox = document.getElementById(`dept-${dept.replace(/[^a-zA-Z0-9]/g, '_')}`);
-            if (checkbox) {
-                checkbox.checked = false;
-                window.updateSelectedDepartments();
-            }
+            if (checkbox) checkbox.checked = false;
+            window.updateSelectedDepartments(); // triggers redraw of tags
         };
 
         function loadUserPINs() {
@@ -1531,7 +1554,7 @@
             try {
                 const firestorePins = {};
                 USERS.forEach(u => {
-                    firestorePins[u.id] = { pin: u.pin };
+                    firestorePins[u.id] = { pin: u.pin, profilePic: u.profilePic || null };
                 });
                 await setDoc(doc(db, "settings", "userPINs"), firestorePins, { merge: true });
             } catch (error) {
@@ -1545,7 +1568,11 @@
             USERS.forEach(user => {
                 const userCard = document.createElement('div');
                 userCard.className = 'user-card';
-                userCard.textContent = user.name;
+                if (user.profilePic) {
+                    userCard.innerHTML = `<img src="${user.profilePic}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; margin-bottom:10px;"><br>${user.name}`;
+                } else {
+                    userCard.innerHTML = `<div style="font-size: 24px; margin-bottom: 10px;">👤</div>${user.name}`;
+                }
                 userCard.onclick = () => selectUser(user);
                 userSelect.appendChild(userCard);
             });
@@ -1604,7 +1631,7 @@
             localStorage.setItem('currentUserId', user.id);
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('appContainer').style.display = 'block';
-            document.getElementById('currentUserDisplay').textContent = `👤 ${user.name}`;
+            updateProfilePicDisplay();
             window.backToUserSelect();
             updateStats();
         }
@@ -1666,6 +1693,7 @@
                 uhid: document.getElementById('patientUHID').value,
                 cardType: document.getElementById('cardType').value,
                 registrationNo: document.getElementById('registrationNo').value,
+                remarks: document.getElementById('patientRemarks').value || '',
                 departments: [...selectedDepartments],
                 status: document.getElementById('status').value,
                 addedBy: currentUser.name,
@@ -1765,7 +1793,7 @@
                     <td>${patient.uhid}</td>
                     <td><span class="card-type-badge ${cardClass}">${patient.cardType}</span></td>
                     <td>${patient.registrationNo}</td>
-                    <td><small>${departmentsDisplay}</small></td>
+                    <td><small>${departmentsDisplay}</small><br><small style="color:var(--text-light)">${patient.remarks || ''}</small></td>
                     <td><span class="status-badge ${statusClass}">${patient.status}</span></td>
                     <td><strong>${patient.addedBy}</strong></td>
                     <td>
@@ -1819,6 +1847,7 @@
                 document.getElementById('patientUHID').value = patient.uhid;
                 document.getElementById('cardType').value = patient.cardType;
                 document.getElementById('registrationNo').value = patient.registrationNo;
+                document.getElementById('patientRemarks').value = patient.remarks || '';
                 document.getElementById('status').value = patient.status;
                 selectedDepartments = Array.isArray(patient.departments) ? [...patient.departments] : (patient.department ? [patient.department] : []);
                 document.getElementById('departmentSearch').value = '';
@@ -1949,7 +1978,56 @@
             document.getElementById('settingsModal').classList.add('active');
             document.getElementById('pinSuccessMessage').style.display = 'none';
             document.getElementById('pinErrorMessage').style.display = 'none';
+            document.getElementById('picSuccessMessage').style.display = 'none';
+            if (currentUser && currentUser.profilePic) {
+                document.getElementById('profilePicPreview').src = currentUser.profilePic;
+            }
         };
+
+        window.handleProfilePicUpload = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 150;
+                    const scaleSize = MAX_WIDTH / img.width;
+                    canvas.width = MAX_WIDTH;
+                    canvas.height = img.height * scaleSize;
+                    
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                    document.getElementById('profilePicPreview').src = compressedBase64;
+                    
+                    const userIndex = USERS.findIndex(u => u.id === currentUser.id);
+                    if (userIndex !== -1) {
+                        USERS[userIndex].profilePic = compressedBase64;
+                        currentUser.profilePic = compressedBase64;
+                        saveUserPINs();
+                        updateProfilePicDisplay();
+                        document.getElementById('picSuccessMessage').style.display = 'block';
+                        setTimeout(() => document.getElementById('picSuccessMessage').style.display = 'none', 3000);
+                        loadUsers(); // refresh the login screen cards
+                    }
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        function updateProfilePicDisplay() {
+            if (currentUser && currentUser.profilePic) {
+                const display = document.getElementById('currentUserDisplay');
+                display.innerHTML = `<img src="${currentUser.profilePic}" style="width:24px; height:24px; border-radius:50%; object-fit:cover; vertical-align:middle; margin-right:5px; border: 1px solid white;"> ${currentUser.name}`;
+            } else if (currentUser) {
+                document.getElementById('currentUserDisplay').textContent = `👤 ${currentUser.name}`;
+            }
+        }
 
         window.closeSettings = function() {
             document.getElementById('settingsModal').classList.remove('active');
@@ -2145,6 +2223,12 @@
                             <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>Registration No:</strong></td>
                             <td style="padding: 10px; border-bottom: 1px solid #ddd;">${patient.registrationNo}</td>
                         </tr>
+                        ${patient.remarks ? `
+                        <tr>
+                            <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>Remarks:</strong></td>
+                            <td style="padding: 10px; border-bottom: 1px solid #ddd;">${patient.remarks}</td>
+                        </tr>
+                        ` : ''}
                         <tr>
                             <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>Specialities:</strong></td>
                             <td style="padding: 10px; border-bottom: 1px solid #ddd;">${depts}</td>
@@ -2258,16 +2342,26 @@ _Patient Check-List v2.1 Cloud_`;
                     const firestorePins = docSnap.data();
                     let updated = false;
                     USERS.forEach(u => {
-                        if (firestorePins[u.id] && firestorePins[u.id].pin && u.pin !== firestorePins[u.id].pin) {
-                            u.pin = firestorePins[u.id].pin;
-                            updated = true;
+                        if (firestorePins[u.id]) {
+                            if (firestorePins[u.id].pin && u.pin !== firestorePins[u.id].pin) {
+                                u.pin = firestorePins[u.id].pin;
+                                updated = true;
+                            }
+                            if (firestorePins[u.id].profilePic && u.profilePic !== firestorePins[u.id].profilePic) {
+                                u.profilePic = firestorePins[u.id].profilePic;
+                                updated = true;
+                            }
                         }
                     });
                     if (updated) {
                         localStorage.setItem('userPINs', JSON.stringify(USERS));
+                        loadUsers(); // Refresh cards to show new pics
                         if (currentUser) {
                             const updatedUser = USERS.find(u => u.id === currentUser.id);
-                            if (updatedUser) currentUser = updatedUser;
+                            if (updatedUser) {
+                                currentUser = updatedUser;
+                                updateProfilePicDisplay();
+                            }
                         }
                     }
                 }
