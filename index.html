@@ -1594,9 +1594,10 @@
             if (saved) {
                 USERS = JSON.parse(saved);
                 DEFAULT_USERS.forEach(defUser => {
-                    const existingUser = USERS.find(u => u.id === defUser.id || u.name === defUser.name);
-                    if (existingUser) {
-                        existingUser.isAdmin = defUser.isAdmin || false;
+                    const exists = USERS.find(u => u.id === defUser.id);
+                    if (exists) {
+                        exists.isAdmin = defUser.isAdmin;
+                        exists.name = defUser.name;
                     } else {
                         USERS.push(defUser);
                     }
