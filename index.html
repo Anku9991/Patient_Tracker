@@ -2253,6 +2253,30 @@
             const patient = patients.find(p => p.docId === docId);
             if (!patient) return;
 
+            const cardTypeFullForms = {
+                "CGHS": "CGHS (Central Govt. Health Scheme)",
+                "CGHS Staff": "CGHS Staff",
+                "ECHS": "ECHS (Ex-Servicemen Contributory Health Scheme)",
+                "CAPF": "CAPF (Central Armed Police Forces)",
+                "NER": "NER (North Eastern Railway)",
+                "NR": "NR (Northern Railway)",
+                "NCR": "NCR (North Central Railway)",
+                "MCF": "MCF (Modern Coach Factory)",
+                "RDSO": "RDSO (Research Designs and Standards Organisation)",
+                "HAL Korwa": "HAL Korwa (Hindustan Aeronautics Limited Korwa)",
+                "HAL Lucknow": "HAL Lucknow (Hindustan Aeronautics Limited Lucknow)",
+                "HAL Kanpur": "HAL Kanpur (Hindustan Aeronautics Limited Kanpur)",
+                "CSIR": "CSIR (Council of Scientific and Industrial Research)",
+                "NTPC": "NTPC (National Thermal Power Corporation)",
+                "NMDC": "NMDC (National Mineral Development Corporation)",
+                "AAI": "AAI (Airports Authority of India)",
+                "Coal India": "Coal India",
+                "CDRI": "CDRI (Central Drug Research Institute)",
+                "IITR": "IITR (Indian Institute of Toxicology Research)",
+                "CIMAP": "CIMAP (Central Institute of Medicinal and Aromatic Plants)"
+            };
+
+            const fullCardType = cardTypeFullForms[patient.cardType] || patient.cardType;
             const depts = Array.isArray(patient.departments) ? patient.departments.join(' + ') : (patient.department || 'N/A');
             const billHTML = `
                 <div style="text-align: center; margin-bottom: 30px;">
@@ -2275,7 +2299,7 @@
                         </tr>
                         <tr>
                             <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>Card Type:</strong></td>
-                            <td style="padding: 10px; border-bottom: 1px solid #ddd;">${patient.cardType}</td>
+                            <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold; font-size: 1.2em;">${fullCardType}</td>
                         </tr>
                         <tr>
                             <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>Registration No:</strong></td>
