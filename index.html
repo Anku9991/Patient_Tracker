@@ -2280,11 +2280,16 @@
             const fullCardType = cardTypeFullForms[patient.cardType] || patient.cardType;
             const depts = Array.isArray(patient.departments) ? patient.departments.join(' + ') : (patient.department || 'N/A');
             const billHTML = `
-                <div style="text-align: center; margin-bottom: 30px;">
-                    <h1 style="color: #1e3c72;">CREDIT/PANEL PATIENT CHECK-LIST</h1>
-                    <h2 style="margin-top: 20px;">PATIENT REGISTRATION RECEIPT</h2>
-                </div>
-                <div style="border: 2px solid #333; padding: 20px; margin-bottom: 20px;">
+                <div style="position: relative; padding: 20px; min-height: 500px;">
+                    <!-- Watermark Image -->
+                    <img src="watermark.png" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 500px; opacity: 0.1; z-index: 0; pointer-events: none;" alt="Watermark">
+                    
+                    <div style="position: relative; z-index: 1;">
+                        <div style="text-align: center; margin-bottom: 30px;">
+                            <h1 style="color: #1e3c72;">CREDIT/PANEL PATIENT CHECK-LIST</h1>
+                            <h2 style="margin-top: 20px;">PATIENT REGISTRATION RECEIPT</h2>
+                        </div>
+                        <div style="border: 2px solid #333; padding: 20px; margin-bottom: 20px;">
                     <table style="width: 100%; border-collapse: collapse;">
                         <tr>
                             <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>Date:</strong></td>
@@ -2330,6 +2335,8 @@
                     <p><strong>Registered on:</strong> ${patient.timestamp ? new Date(patient.timestamp).toLocaleString('en-IN') : new Date().toLocaleString('en-IN')}</p>
                     <p style="margin-top: 20px; font-size: 18px; font-weight: bold;">Thank You !!</p>
                 </div>
+                </div>
+            </div>
             `;
             document.getElementById('printPreview').innerHTML = billHTML;
             document.getElementById('printBillModal').classList.add('active');
