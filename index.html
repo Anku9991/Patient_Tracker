@@ -714,6 +714,9 @@
         .card-nmdc { background: #d6eaf8; color: #154360; }
         .card-aai { background: #d4e6f1; color: #1b4f72; }
         .card-coalindia { background: #f5cba7; color: #784212; }
+        .card-nuppldavschool { background: #e8daef; color: #5b2c6f; }
+        .card-nupplcisf { background: #d5f5e3; color: #1e8449; }
+        .card-visithealthltd { background: #fdebd0; color: #b9770e; }
 
         .action-buttons {
             display: flex;
@@ -1183,6 +1186,9 @@
                             <option value="CDRI">CDRI</option>
                             <option value="IITR">IITR</option>
                             <option value="CIMAP">CIMAP</option>
+                            <option value="NUPPL DAV School">NUPPL DAV School</option>
+                            <option value="NUPPL CISF">NUPPL CISF</option>
+                            <option value="VISIT Health Ltd">VISIT Health Ltd</option>
                         </select>
                     </div>
 
@@ -1481,7 +1487,7 @@
             { id: 4, name: 'Pawan Sharma', pin: '4567' },
             { id: 5, name: 'Abhishek Soni', pin: '5678' },
             { id: 6, name: 'Nisha Shukla', pin: '6789' },
-            { id: 7, name: 'Komal Vishwakarma', pin: '7890' },
+            { id: 7, name: 'Shalini Srivastava', pin: '7890' },
             { id: 8, name: 'Sumit Kumar', pin: '8901' },
             { id: 9, name: 'Satyam Patel', pin: '1234', isAdmin: true },
             { id: 10, name: 'Jaswant Ojha', pin: '0000' }
@@ -2274,7 +2280,10 @@
                 "Coal India": "Coal India",
                 "CDRI": "CDRI (Central Drug Research Institute)",
                 "IITR": "IITR (Indian Institute of Toxicology Research)",
-                "CIMAP": "CIMAP (Central Institute of Medicinal and Aromatic Plants)"
+                "CIMAP": "CIMAP (Central Institute of Medicinal and Aromatic Plants)",
+                "NUPPL DAV School": "NUPPL DAV School",
+                "NUPPL CISF": "NUPPL CISF",
+                "VISIT Health Ltd": "VISIT Health Ltd"
             };
 
             const fullCardType = cardTypeFullForms[patient.cardType] || patient.cardType;
