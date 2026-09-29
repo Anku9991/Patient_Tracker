@@ -1378,7 +1378,7 @@
             <p style="color: var(--text-color); margin-bottom: 25px; font-size: 16px;">
                 Your storage has been full. Kindly upgrade your plan to continue adding new patients.
             </p>
-            <button class="btn btn-primary" onclick="document.getElementById('storageFullModal').classList.remove('active')">Close</button>
+            <button class="btn btn-primary" onclick="window.closeStorageWarning()">Close</button>
         </div>
     </div>
 
@@ -1734,6 +1734,13 @@
             }
         };
 
+        window.hasSeenStorageWarning = false;
+        window.closeStorageWarning = function() {
+            document.getElementById('storageFullModal').classList.remove('active');
+            window.hasSeenStorageWarning = true;
+            document.getElementById('patientForm').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+        };
+
         function setDefaultDate() {
             document.getElementById('patientDate').value = getLocalDateString();
         }
@@ -1751,10 +1758,11 @@
         async function handleSubmit(e) {
             e.preventDefault();
 
-            if (!editingPatientId) {
+            if (!editingPatientId && !window.hasSeenStorageWarning) {
                 document.getElementById('storageFullModal').classList.add('active');
                 return;
             }
+            window.hasSeenStorageWarning = false;
             if (!currentUser) {
                 alert('Please login first!');
                 return;
