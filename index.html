@@ -712,7 +712,6 @@
         .card-ntpc { background: #fadbd8; color: #78281f; }
         .card-nmdc { background: #d6eaf8; color: #154360; }
         .card-aai { background: #d4e6f1; color: #1b4f72; }
-        .card-coalindia { background: #f5cba7; color: #784212; }
         .card-nuppldavschool { background: #e8daef; color: #5b2c6f; }
         .card-nupplcisf { background: #d5f5e3; color: #1e8449; }
         .card-visithealthltd { background: #fdebd0; color: #b9770e; }
@@ -1180,7 +1179,6 @@
                             <option value="NTPC">NTPC</option>
                             <option value="NMDC">NMDC</option>
                             <option value="AAI">AAI</option>
-                            <option value="Coal India">Coal India</option>
                             <option value="CDRI">CDRI</option>
                             <option value="IITR">IITR</option>
                             <option value="CIMAP">CIMAP</option>
@@ -1263,10 +1261,12 @@
                         <option value="NTPC">NTPC</option>
                         <option value="NMDC">NMDC</option>
                         <option value="AAI">AAI</option>
-                        <option value="Coal India">Coal India</option>
                         <option value="CDRI">CDRI</option>
                         <option value="IITR">IITR</option>
                         <option value="CIMAP">CIMAP</option>
+                        <option value="NUPPL DAV School">NUPPL DAV School</option>
+                        <option value="NUPPL CISF">NUPPL CISF</option>
+                        <option value="VISIT Health Ltd">VISIT Health Ltd</option>
                     </select>
                     <select class="filter-select" id="filterUser" onchange="filterTable()">
                         <option value="">All Users</option>
@@ -1500,7 +1500,9 @@
             { id: 7, name: 'Shalini Srivastava', pin: '7890' },
             { id: 8, name: 'Sumit Kumar', pin: '8901' },
             { id: 9, name: 'Satyam Patel', pin: '1234', isAdmin: true },
-            { id: 10, name: 'Jaswant Ojha', pin: '0000' }
+            { id: 10, name: 'Jaswant Ojha', pin: '0000' },
+            { id: 11, name: 'Vikram Kumar', pin: '0000' },
+            { id: 12, name: 'Dharmbir Singh', pin: '0000' }
         ];
 
         let USERS = [];
@@ -2299,7 +2301,6 @@
                 "NTPC": "NTPC (National Thermal Power Corporation)",
                 "NMDC": "NMDC (National Mineral Development Corporation)",
                 "AAI": "AAI (Airports Authority of India)",
-                "Coal India": "Coal India",
                 "CDRI": "CDRI (Central Drug Research Institute)",
                 "IITR": "IITR (Indian Institute of Toxicology Research)",
                 "CIMAP": "CIMAP (Central Institute of Medicinal and Aromatic Plants)",
